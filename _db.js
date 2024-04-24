@@ -7,7 +7,10 @@ const users = [
         total_owed: 0,
         friends: ["2","3"],
         transactions: [],
-        groups_id: [ "1", "2"]
+        balanceByGroup: [ {
+            group_id: "1",
+            balance: "200"
+        } ]
     },
     {
         id: "2",
@@ -17,7 +20,10 @@ const users = [
         total_owed: 0,
         friends: ["1"],
         transactions: [],
-        groups_id: ["1"]
+        balanceByGroup: [ {
+            group_id: "2",
+            balance: "11"
+        } ]
     },
     {
         id: "3",
@@ -27,7 +33,10 @@ const users = [
         total_owed: 0,
         friends: ["1"],
         transactions: [],
-        groups_id: ["2"]
+        balanceByGroup: [ {
+            group_id: "1",
+            balance: "23"
+        } ]
     },
 
 ]   
@@ -58,7 +67,11 @@ const transactions = [
         user_id: "1",
         group_id: "1",
         type: "equally",
-        currencyType: "INR"
+        currencyType: "INR",
+        splitbw: [{
+            "user": "1",
+            "amount": "50"
+        }]
     },
     {
         id: "2",
@@ -68,7 +81,11 @@ const transactions = [
         user_id: "2",
         group_id: "1",
         type: "equally",
-        currencyType: "INR"
+        currencyType: "INR",
+        splitbw: [{
+            "user": "2",
+            "amount": "50"
+        }]
     }
 ]
 

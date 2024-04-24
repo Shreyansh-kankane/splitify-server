@@ -9,7 +9,7 @@ export const typeDefs =`#graphql
         contact: String,
         total_owed: Int!,
         transactions: [Transaction!]
-        groups: [Group!]
+        groups: [UserGroupByBalance]
     },
 
     type Group {
@@ -30,6 +30,17 @@ export const typeDefs =`#graphql
         group: Group!
         type: TransactionType!
         currencyType: CurrencyType!
+        splitbw: [splitbw]
+    }
+
+    type splitbw {
+        user: User,
+        amount: Int
+    }
+
+    type UserGroupByBalance {
+        group: Group,
+        balance: Int
     }
 
 

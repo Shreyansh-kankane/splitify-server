@@ -14,11 +14,23 @@ const resolvers = {
     transaction: (parent, args, context, info) => {
       return db.transactions.find((transaction) => transaction.id === args.id);
     }
+
   },
   User: {
     groups: (parent, args, context, info) => {
-      return db.groups.filter((group) => parent.groups_id.includes(group.id));
+      // return db.groups.filter((group) => parent.groups_id.includes(group.id));
+      let data =  parent.balanceByGroup.map((b)=> {
+        let group_id = b.group_id
+        let balance = b.balance
+        return {"group":db.groups.find((group) => group.id === group_id), "balance":balance}
+      })
+
+      // console.log(data)
+      return data
     },
+  
+
+
     friends: (parent, args, context, info) => {
       return db.users.filter((user) => parent.friends.includes(user.id));
     },
@@ -40,6 +52,11 @@ const resolvers = {
     },
     group: (parent, args, context, info) => {
       return db.groups.find((group) => group.id === parent.group_id);
+    },
+    splitbw: (parent, args, context, info) => {
+      return parent.splitbw.map((s)=> {
+        return {"user":db.users.find((user) => user.id === s.user), "amount":s.amount}
+      })
     }
   }
 
