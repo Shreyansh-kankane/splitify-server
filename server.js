@@ -1,115 +1,57 @@
-// import { ApolloServer } from "@apollo/server"
-// import { startStandaloneServer } from "@apollo/server/standalone"
+import { ApolloServer } from "@apollo/server"
+import { startStandaloneServer } from "@apollo/server/standalone"
+import { typeDefs } from "./schema.js";
+import db from "./_db.js";
 
-// const typeDefs =`#graphql
-
-//   type User {
-//     _id: ID!
-//     username: String!
-//     email: String!
-//   }
-
-//   type Query {
-//     getUser(_id: ID!): User
-//     getAllUsers: [User]
-//   }
-
-//   type Mutation {
-//     createUser(username: String!, email: String!): User
-//     updateUser(_id: ID!, username: String, email: String): User
-//     deleteUser(_id: ID!): User
-//   }
-// `;
-
-// const users = [
-//   { _id: "1", username: "john_doe", email: "john@example.com" },
-//   { _id: "2", username: "jane_smith", email: "jane@example.com" },
-// ];
-
-
-// const resolvers = {
-//   Query: {
-//     getUser: (parent, { _id }) => users.find(user => user._id === _id),
-//     getAllUsers: () => users,
-//   },
-//   Mutation: {
-//     createUser: (parent, { username, email }) => {
-//       const newUser = { _id: String(users.length + 1), username, email };
-//       users.push(newUser);
-//       return newUser;
-//     },
-//     updateUser: (parent, { _id, username, email }) => {
-//       const user = users.find(user => user._id === _id);
-//       if (user) {
-//         user.username = username || user.username;
-//         user.email = email || user.email;
-//         return user;
-//       }
-//     },
-//     deleteUser: (parent, { id }) => {
-//       const index = users.findIndex(user => user._id === _id);
-//       if (index !== -1) {
-//         return users.splice(index, 1)[0];
-//       }
-//     },
-//   },
-// };
-// const server = new ApolloServer({
-//   typeDefs,
-//   resolvers,
-// })
-
-// const { url } = await startStandaloneServer(server)
-
-// console.log(`🚀 Server ready at ${url}`)
+const resolvers = {
+  Query: {
+    user: (parent, args, context, info) => {
+      return db.users.find((user) => user.id === args.id);
+    },
+    group: (parent, args, context, info) => {
+      return db.groups.find((group) => group.id === args.id);
+    },
+    transaction: (parent, args, context, info) => {
+      return db.transactions.find((transaction) => transaction.id === args.id);
+    }
+  },
+  User: {
+    groups: (parent, args, context, info) => {
+      return db.groups.filter((group) => parent.groups_id.includes(group.id));
+    },
+    friends: (parent, args, context, info) => {
+      return db.users.filter((user) => parent.friends.includes(user.id));
+    },
+    transactions: (parent, args, context, info) => {
+      return db.transactions.filter((transaction) => transaction.user_id === parent.id);
+    }
+  },
+  Group: {
+    users: (parent, args, context, info) => {
+      return db.users.filter((user) => user.groups_id.includes(parent.id));
+    },
+    transactions: (parent,args) => {
+      return db.transactions.filter((t)=> t.group_id == parent.id)
+    }
+  },
+  Transaction: {
+    user: (parent, args, context, info) => {
+      return db.users.find((user) => user.id === parent.user_id);
+    },
+    group: (parent, args, context, info) => {
+      return db.groups.find((group) => group.id === parent.group_id);
+    }
+  }
 
 
-const expenditures =  [{   
-    id: 1,
-    paidBy: 'John Doe',
-    amount: 100,
-    shortDesc: 'Barbeque',
-    participants: ['John Doe', 'Alex', 'John Smith'],
-    date: '2024-01-22T11:21:18.432Z'
-},
-{
-    id: 1,
-    paidBy: 'John Doe',
-    amount: 100,
-    shortDesc: 'Barbeque',
-    participants: ['John Doe', 'Alex', 'John Smith'],
-    date: '2024-02-22T11:21:18.432Z'
-},
+};
 
-{
-    id: 2,
-    paidBy: 'John Smith',
-    amount: 200,
-    shortDesc: 'Backery',
-    participants: ['John Doe', 'Alex', 'John Smith'],
-    date: '2024-02-22T11:21:18.432Z'
-},
-{
-    id: 3,
-    paidBy: 'Alex',
-    amount: 600,
-    shortDesc: 'Cafe',
-    participants: ['John Doe','Alex','John Smith'],
-    date: '2024-02-22T11:21:18.432Z'
-}
-]
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+})
 
-const formattedExpenditures = {};
+const { url } = await startStandaloneServer(server)
 
-for(let i=0; i<expenditures.length; i++){
-const date = new Date(expenditures[i].date).toDateString();
-const month = date.toLocaleString('default', { month: 'long' });
-console.log(month);
-if(formattedExpenditures[date]){
-    formattedExpenditures[date].push(expenditures[i]);
-} else {
-    formattedExpenditures[date] = [expenditures[i]];
-}
-}
+console.log(`🚀 Server ready at ${url}`)
 
-console.log(formattedExpenditures);
