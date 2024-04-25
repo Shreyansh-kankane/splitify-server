@@ -1,20 +1,26 @@
 
 export const typeDefs =`#graphql
-
+    scalar Date
     type User {
-        id: ID!,
+        _id: ID!,
         name: String!,
+        email: String!,
+        password: String!,
+        phoneNo: String,
         imageUrl: String,
         friends: [User],
         contact: String,
         total_owed: Int!,
         transactions: [Transaction!]
         groups: [UserGroupByBalance]
+        isVerified: Boolean
+        resetPasswordToken: String,
+        resetPasswordExpires: Date
     },
 
     type Group {
-        id: ID!,
-        users: [User!]!
+        _id: ID!,
+        balancePerUser: [balancePerUser],
         imageUrl: String,
         name: String!,
         type: GroupType!
@@ -22,15 +28,20 @@ export const typeDefs =`#graphql
     }
 
     type Transaction {
-        id: ID!,
+        _id: ID!,
         amount: Int!,
         description: String,
-        date: String!,
+        created_at: Date,
         user: User!,
         group: Group!
         type: TransactionType!
         currencyType: CurrencyType!
         splitbw: [splitbw]
+    }
+
+    type balancePerUser {
+        user: User,
+        balance: Int
     }
 
     type splitbw {

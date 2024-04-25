@@ -1,6 +1,6 @@
 const users = [
     {
-        id: "1",
+        _id: "1",
         name: "John Doe",
         imageUrl: "https://randomuser.me/api/port",
         contact: "1234567890",
@@ -10,10 +10,13 @@ const users = [
         balanceByGroup: [ {
             group_id: "1",
             balance: "200"
+        },{
+            group_id: "2",
+            balance: "100"
         } ]
     },
     {
-        id: "2",
+        _id: "2",
         name: "Jane",
         imageUrl: "https://randomuser.me/api/port",
         contact: "1234567890",
@@ -26,7 +29,7 @@ const users = [
         } ]
     },
     {
-        id: "3",
+        _id: "3",
         name: "Alice",
         imageUrl: "https://randomuser.me/api/port",
         contact: "1234567890",
@@ -44,13 +47,13 @@ const users = [
 
 const groups = [
     {
-        id: "1",
+        _id: "1",
         name: "Trip",
         imageUrl: "https://randomuser.me/api/port",
         type: "Trip"
     },
     {
-        id: "2",
+        _id: "2",
         name: "House",
         imageUrl: "https://randomuser.me/api/port",
         type: "House"
@@ -60,7 +63,7 @@ const groups = [
 const transactions = [
 
     {
-        id: "1",
+        _id: "1",
         amount: 100,
         description: "Trip to Jammu",
         date: "2021-05-01",
@@ -74,7 +77,7 @@ const transactions = [
         }]
     },
     {
-        id: "2",
+        _id: "2",
         amount: 100,
         description: "Trip to Goa",
         date: "2021-05-01",
@@ -90,3 +93,5 @@ const transactions = [
 ]
 
 export default { users, groups, transactions}
+
+//  "$oid": "662aa202fb64f5d86b933509"
