@@ -1,4 +1,5 @@
 import { Schema } from "mongoose";
+import mongoose from "mongoose";
 
 const UserSchema = new Schema({
     name: String,
@@ -34,7 +35,7 @@ const UserSchema = new Schema({
 
     isVerified: Boolean,
     resetPasswordToken: String,
-    resetPasswordTokenExpires: Date.now() + 3600000,
+    resetPasswordTokenExpires: Date,
 },{
     timestamps: true,
 })
