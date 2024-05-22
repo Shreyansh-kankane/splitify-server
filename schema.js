@@ -29,8 +29,8 @@ export const typeDefs =`#graphql
 
     type Transaction {
         _id: ID!,
-        amount: Int!,
-        description: String,
+        amount: Float!,
+        description: String!,
         created_at: Date,
         user: User!,
         group: Group!
@@ -41,12 +41,12 @@ export const typeDefs =`#graphql
 
     type balancePerUser {
         user: User,
-        balance: Int
+        balance: Float
     }
 
     type splitbw {
         user: User,
-        amount: Int
+        amount: Float
     }
 
     type UserGroupByBalance {
@@ -64,7 +64,8 @@ export const typeDefs =`#graphql
 
     enum TransactionType {
         equally,
-        custom
+        custom,
+        percentage
     }
 
     enum CurrencyType {
@@ -78,6 +79,42 @@ export const typeDefs =`#graphql
         user(id: ID!): User,
         group(id: ID!): Group,
         transaction(id: ID!): Transaction
+        getExpenseFeed(groupId: ID!,userId: ID!): ExpenseFeed
+    }
+    type Mutation {
+        createUser(name: String!, email: String!, password: String!, phoneNo: String, imageUrl: String): User,
+        updateUser(id:ID!, edits: EditUserInput!): User
+        createGroup(name: String!, type: GroupType!, admin: ID!, imageUrl: String): Group,
+        addGroupMember(groupId: ID!, userIds: [ID!]!): Group,
+        addFriend(id: ID!, friendId: ID!): User,
+        createTransaction(amount: Float!, description: String!, user: ID!, group: ID!, type: TransactionType!, currencyType: CurrencyType!, splitbw: [splitbwInput]): Transaction
+    }
+
+    type ExpenseFeed {
+        edges: [EDGE!]
+    }
+
+    # type VAL {
+    #     user: User,
+    #     balance: Int
+    # }
+
+    type EDGE {
+        from: String,
+        to: String,
+        label: String
+    }
+
+
+    input EditUserInput {
+        phoneNo: String,
+        imageUrl: String,
+        contact: String,
+    }
+
+    input splitbwInput {
+        user: ID!,
+        amount: Float!
     }
 `;
 

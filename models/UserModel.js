@@ -7,6 +7,7 @@ const UserSchema = new Schema({
     imageUrl: String,
     password: String,
     phoneNo: String,
+    contact: String,
     total_owed: Number,
     groups: [{
         type: Schema.Types.ObjectId,
@@ -15,24 +16,18 @@ const UserSchema = new Schema({
     friends: [{
         type: Schema.Types.ObjectId,
         ref: "User",
-        },
-    ],
-    transactions: [
-        {
+    }],
+    transactions: [{
         type: Schema.Types.ObjectId,
         ref: "Transaction",
-        },
-    ],
-    balanceByGroup: [
-        {
+    }],
+    balanceByGroup: [{
         group_id: {
             type: Schema.Types.ObjectId,
             ref: "Group",
         },
         balance: Number,
-        },
-    ],
-
+    }],
     isVerified: Boolean,
     resetPasswordToken: String,
     resetPasswordTokenExpires: Date,

@@ -14,7 +14,7 @@ const TransactionSchema = new Schema({
     },
     type: {
         type: String,
-        enum: ["equally","custom"],
+        enum: ["equally","percentage","custom","shares"],
         default: "equally"
     },
     currencyType: {
