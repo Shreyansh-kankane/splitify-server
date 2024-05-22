@@ -25,21 +25,27 @@ const dateScalar = new GraphQLScalarType({
       return new Date(value); // Convert incoming integer to Date
     }
 }});
+// mongoose.connect("mongodb+srv://shreyanshguptaphy:SPXkELADOJi8LqzL@cluster0.24euc9h.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+// });
 
-mongoose.connect("mongodb://localhost:27017/splitify", {
+// mongoose.connect("mongodb+srv://shreyanshguptaphy:wBaxR18DBCNm44gr@cluster0.24euc9h.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0").then(()=>{
+//   console.log("connected")
+// })
+// mongodb+srv://shreyanshguptaphy:wBaxR18DBCNm44gr@cluster0.24euc9h.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+mongoose.connect("mongodb+srv://shreyanshguptaphy:wBaxR18DBCNm44gr@cluster0.24euc9h.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0/test",{
   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
-
+})
 
 const resolvers = {
   Date: dateScalar,
   Query: {
     user: async (parent, args, context, info) => {
       // return db.users.find((user) => user._id === args.id);
-      console.log('get user')
-      const user = await User.findById(args.id);
-      return user
+        const user = await User.findById(args.id);
+        return user
     },
     group: async (parent, args, context, info) => {
       // return db.groups.find((group) => group._id === args.id);
