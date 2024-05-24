@@ -1,6 +1,14 @@
 import { Schema } from "mongoose";
 import mongoose from "mongoose";
 
+const splitbwSchema = new Schema({
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+    },
+    amount: Number,
+},{_id: false})
+
 const TransactionSchema = new Schema({
     description: String,
     amount: Number,
@@ -22,13 +30,7 @@ const TransactionSchema = new Schema({
         enum: ["INR","USD","EUR","GBP"],
         default: "INR"
     },
-    splitbw: [{
-        user: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
-        },
-        amount: Number,
-    }]
+    splitbw: [splitbwSchema]
 },{
     timestamps: true,
 })

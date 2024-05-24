@@ -1,6 +1,22 @@
 import { Schema } from "mongoose";
 import mongoose from "mongoose";
 
+const userGroupSchema = new Schema({
+    group_id: {
+        type: Schema.Types.ObjectId,
+        ref: "Group",
+    },
+    balance: Number,
+}, {_id: false})
+
+const userFriendSchema = new Schema({
+    friend_id: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+    },
+    balance: Number,
+}, {_id: false})
+
 const UserSchema = new Schema({
     name: String,
     email: String,
@@ -9,25 +25,12 @@ const UserSchema = new Schema({
     phoneNo: String,
     contact: String,
     total_owed: Number,
-    groups: [{
-        type: Schema.Types.ObjectId,
-        ref: "Group",
-    }],
-    friends: [{
-        type: Schema.Types.ObjectId,
-        ref: "User",
-    }],
+    friends: [ userFriendSchema ],
     transactions: [{
         type: Schema.Types.ObjectId,
         ref: "Transaction",
     }],
-    balanceByGroup: [{
-        group_id: {
-            type: Schema.Types.ObjectId,
-            ref: "Group",
-        },
-        balance: Number,
-    }],
+    groups: [ userGroupSchema ],
     isVerified: Boolean,
     resetPasswordToken: String,
     resetPasswordTokenExpires: Date,

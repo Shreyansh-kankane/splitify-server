@@ -8,52 +8,36 @@ export const typeDefs =`#graphql
         password: String!,
         phoneNo: String,
         imageUrl: String,
-        friends: [User],
         contact: String,
         total_owed: Int!,
+        friends: [UserFriend!],
+        groups: [UserGroup!]
         transactions: [Transaction!]
-        groups: [UserGroupByBalance]
         isVerified: Boolean
         resetPasswordToken: String,
         resetPasswordExpires: Date
     },
 
-    type Group {
-        _id: ID!,
-        balancePerUser: [balancePerUser],
-        imageUrl: String,
-        name: String!,
-        type: GroupType!
-        transactions: [Transaction!]
-    }
-
-    type Transaction {
-        _id: ID!,
-        amount: Float!,
-        description: String!,
-        created_at: Date,
-        user: User!,
-        group: Group!
-        type: TransactionType!
-        currencyType: CurrencyType!
-        splitbw: [splitbw]
-    }
-
-    type balancePerUser {
-        user: User,
+    type UserFriend {
+        friend: User,
         balance: Float
     }
 
-    type splitbw {
-        user: User,
-        amount: Float
-    }
-
-    type UserGroupByBalance {
+    type UserGroup {
         group: Group,
-        balance: Int
+        balance: Float
     }
 
+    type Group {
+        _id: ID!,
+        name: String!,
+        imageUrl: String,
+        admin: User!,
+        users: [User!],
+        type: GroupType!
+        currencyType: CurrencyType!
+        transactions: [Transaction!]
+    }
 
     enum GroupType {
         Trip,
@@ -62,17 +46,34 @@ export const typeDefs =`#graphql
         Other
     }
 
+    enum CurrencyType {
+        INR,
+        USD,
+        EUR,
+        GBP
+    }
+
+    type Transaction {
+        _id: ID!,
+        amount: Float!,
+        description: String!,
+        user: User!,
+        group: Group!
+        type: TransactionType!
+        currencyType: CurrencyType!
+        splitbw: [splitbw]
+        created_at: Date,
+    }
+
     enum TransactionType {
         equally,
         custom,
         percentage
     }
 
-    enum CurrencyType {
-        INR,
-        USD,
-        EUR,
-        GBP
+    type splitbw {
+        user: User,
+        amount: Float
     }
 
     type Query {
@@ -83,28 +84,30 @@ export const typeDefs =`#graphql
     }
     type Mutation {
         createUser(name: String!, email: String!, password: String!, phoneNo: String, imageUrl: String): User,
+        createUserWithGoogleSignIn(name: String!, email: String!,imageUrl: String): User,
         updateUser(id:ID!, edits: EditUserInput!): User
-        createGroup(name: String!, type: GroupType!, admin: ID!, imageUrl: String): Group,
-        addGroupMember(groupId: ID!, userIds: [ID!]!): Group,
+        updateUserPassword(id: ID!, password: String!, token: String!): User,
         addFriend(id: ID!, friendId: ID!): User,
+        createGroup(name: String!, type: GroupType!, admin: ID!, currencyType: CurrencyType, imageUrl: String): Group,
+        addGroupMember(groupId: ID!, userIds: [ID!]!): Group,
         createTransaction(amount: Float!, description: String!, user: ID!, group: ID!, type: TransactionType!, currencyType: CurrencyType!, splitbw: [splitbwInput]): Transaction
     }
 
     type ExpenseFeed {
-        edges: [EDGE!]
+        edges: [EDGE!],
+        nodes: [VAL!]
     }
 
-    # type VAL {
-    #     user: User,
-    #     balance: Int
-    # }
+    type VAL {
+        user: String,
+        balance: Float
+    }
 
     type EDGE {
         from: String,
         to: String,
         label: String
     }
-
 
     input EditUserInput {
         phoneNo: String,
