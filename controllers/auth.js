@@ -41,6 +41,7 @@ const signup = async (req, res) => {
             name,
             email,
             password: hashedPassword,
+            total_owed: 0,
             isVerified: false
         })
         await newUser.save();
@@ -187,5 +188,20 @@ const login = async (req, res) => {
     }
 };
 
+const createUserWithGoogleSignIn = async (req, res) => {
+    try {
+        const { name, email, imageUrl } = req.body;
+        const user = new User({
+            name,
+            email,
+            imageUrl,
+            total_owed: 0,
+        });
+        await user.save();
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
 
-export { signup,verifyOTP,resendOTP,login }
+export { signup,verifyOTP,resendOTP,login,createUserWithGoogleSignIn }
