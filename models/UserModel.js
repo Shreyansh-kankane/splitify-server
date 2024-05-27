@@ -17,6 +17,7 @@ const userFriendSchema = new Schema({
     balance: Number,
 }, {_id: false})
 
+
 const UserSchema = new Schema({
     name: String,
     email: String,
@@ -24,12 +25,11 @@ const UserSchema = new Schema({
     password: String,
     phoneNo: String,
     contact: String,
-    total_owed: Number,
+    total_owed: {
+        type: Number,
+        default: 0,
+    },
     friends: [ userFriendSchema ],
-    transactions: [{
-        type: Schema.Types.ObjectId,
-        ref: "Transaction",
-    }],
     groups: [ userGroupSchema ],
     isVerified: Boolean,
     resetPasswordToken: String,

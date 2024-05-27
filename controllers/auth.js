@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import UserOTPVerification from '../models/UserOTPVerification.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
 
@@ -204,4 +205,35 @@ const createUserWithGoogleSignIn = async (req, res) => {
     }
 }
 
-export { signup,verifyOTP,resendOTP,login,createUserWithGoogleSignIn }
+const changePasswordReq = async (req,res) => {
+    try {
+        const {email} = req.body;
+        const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '20m' });
+        const data = {
+            from: process.env.AUTH_EMAIL,
+            to: email,
+            subject: 'Reset Password Request',
+            html: `
+                <h2>Please click on the link to reset your password</h2>
+                <p>${process.env.URL}/resetPassword/?token=${token}</p>
+                <p>Do not share with anyone.</p>
+            `
+        }
+        await transporter.sendMail(data);
+        res.json({ message: 'Reset Password Email sent successfully' });
+
+    } catch (error) {
+        
+    }
+}
+
+const resetPassword = async (req,res) => {
+    const token = req.params.token;
+    if(!token){
+        return res.status(400).json({ error: 'Invalid token' });
+    }
+
+}
+
+
+export { signup,verifyOTP,resendOTP,login,createUserWithGoogleSignIn,changePasswordReq,resetPassword }

@@ -11,6 +11,7 @@ import Transaction from "./models/TransactionModel.js";
 
 import { GraphQLScalarType } from 'graphql';
 import { solveData } from "./algo.js";
+import bcrypt from 'bcrypt';
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -49,8 +50,11 @@ const resolvers = {
     },
     getExpenseFeed: async (parent, args, context, info) => {
       // let group = await Group.findById(args.groupId).select('balancePerUser');
-      let users = await Group.findById(args.groupId).populate({path: 'users', select:'_id name'});
+      
+      let users = await Group.findById(args.groupId);
       let transactions = await Transaction.find({ group: args.groupId });
+      
+      console.log(users)
 
       let data = {
         nodes: [],
@@ -150,20 +154,22 @@ const resolvers = {
   Mutation: {
     createUser: async (parent, args, context, info) =>{
       const user = await User.find({email : args.email});
-      if(user) {
+      if(user.length > 0) {
         throw new Error("user already exists with this email");
-        return null;
       };
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(args.password, salt);
 
       const newUser = new User({
         name: args.name,
         email: args.email,
         imageUrl: args.imageUrl,
-        password: args.password,
+        password: hashedPassword,
         phoneNo: args.phoneNo,
         contact: "",
         total_owed: 0, 
-        isVerified: false, 
+        isVerified: true,  // change to false
       });
       return  await newUser.save();
     },
@@ -183,7 +189,6 @@ const resolvers = {
       });
       return  await newUser.save();
     },
-    
     updateUser: async (parent, args, context, info) => {
       const user = await User.findById(args.id);
       user.phoneNo = args.edits.phoneNo || user.phoneNo;
@@ -205,13 +210,16 @@ const resolvers = {
         name: args.name,
         email: args.email,
         password: args.password,
-
         type: args.type,
         imageUrl: args.imageUrl,
         currencyType: args.currencyType,
         admin: args.admin,
         users: [args.admin],
       });
+
+      const user = await User.findById(args.admin);
+      user.groups.push({ group_id: group._id, balance: 0 });
+      await user.save();
       return await group.save();
     },
     addGroupMember: async (parent, args, context, info) => {
@@ -236,8 +244,6 @@ const resolvers = {
             groupUser.friends.push({ friend_id: newUser._id, balance: 0 });
           }
 
-
-
           // Check if groupUser is already a friend of newUser
           if (!newUser.friends.some(friend => friend.friend_id.toString() === groupUser._id.toString())) {
             newUser.friends.push({ friend_id: groupUser._id, balance: 0 });
@@ -256,6 +262,8 @@ const resolvers = {
           }
         }
 
+        newUser.groups.push({ group_id: group._id, balance: 0 });
+       
         // Save the updated newUser
         await newUser.save();
       }
@@ -264,10 +272,6 @@ const resolvers = {
       return await group.save();
       
     },
-
-
-
-
     addFriend: async (parent, args, context, info) => {
       const user = await User.findById(args.id);
       const friend = await User.findById(args.friendId);
@@ -286,24 +290,28 @@ const resolvers = {
       const transactionType = args.type;
       let splitbw = [];
       let creatorId = args.user;
-      let txUsers = await Group.findById(args.groupId).select('users'); // list of userIds including Txn creator
+      let group = await Group.findById(args.group); // list of userIds including Txn creator
+      let txUsers = group.users.map((id)=>{
+        return id.toString();
+      });
 
       if( transactionType === "equally"){ 
         let amount = args.amount;
         let n = txUsers.length;
         
         txUsers.forEach(async(userId)=>{
-
           splitbw.push({"user":userId, "amount":amount/n});
           const user = await User.findById(userId);
-
           for(let i=0;i<user.groups.length;i++){
-            if(user.groups[i].group_id === args.groupId){
+            if(user.groups[i].group_id.toString() == args.group){
               if(userId == creatorId){
                 user.groups[i].balance += (amount - amount/n);
+                user.total_owed += (amount - amount/n);
+
               }
               else {
-                user.groups[i].balance -= amount/n;          
+                user.groups[i].balance -= amount/n;   
+                user.total_owed -= amount/n;       
               }
               break;
             }
@@ -312,7 +320,7 @@ const resolvers = {
           for(let i=0;i<user.friends.length;i++){
             const friend = user.friends[i];
             if(userId == creatorId){
-              if (txUsers.include(friend.friend_id)){
+              if (txUsers.includes(friend.friend_id.toString())){
                 friend.balance -= amount/n;
               }
             }
@@ -321,9 +329,9 @@ const resolvers = {
                 break;
             }
           }
+          await user.save();
         })
-      }
-      
+      }    
       const t = await Transaction.create({
         description: args.description,
         amount: args.amount,
@@ -334,6 +342,8 @@ const resolvers = {
         splitbw: splitbw
       })
 
+      group.transactions.push(t._id);
+      await group.save();
       return t;
     }
   }
@@ -348,11 +358,17 @@ const server = new ApolloServer({
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+}).then(()=>{
+  console.log("Connected to database");
+  startStandaloneServer(server, { listen: { port: process.env.PORT || 4000 } })
+  .then(({ url }) => {
+    console.log(`🚀 Server ready at ${url}`)
+  });
 })
 
-const { url } = await startStandaloneServer(server,
-  { listen: { port: process.env.PORT || 4000 } }
-)
+// const { url } = await startStandaloneServer(server,
+//   { listen: { port: process.env.PORT || 4000 } }
+// )
 
-console.log(`🚀 Server ready at ${url}`)
+// console.log(`🚀 Server ready at ${url}`)
 

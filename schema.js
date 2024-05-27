@@ -5,11 +5,11 @@ export const typeDefs =`#graphql
         _id: ID!,
         name: String!,
         email: String!,
-        password: String!,
+        password: String,
         phoneNo: String,
         imageUrl: String,
         contact: String,
-        total_owed: Int!,
+        total_owed: Float!,
         friends: [UserFriend!],
         groups: [UserGroup!]
         transactions: [Transaction!]
