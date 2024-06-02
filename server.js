@@ -50,18 +50,24 @@ const resolvers = {
     },
     getExpenseFeed: async (parent, args, context, info) => {
       // let group = await Group.findById(args.groupId).select('balancePerUser');
-      
-      let users = await Group.findById(args.groupId);
+      let g = await Group.findById(args.groupId);
+      let u = g.users.map((u)=>{return u.toString()});
+      let users = await Promise.all(
+        u.map(async (id) => {
+          let {_id, name} =  await User.findById(id).select('_id name')
+          return ({_id: _id.toString() , name});
+        })
+      )
+
       let transactions = await Transaction.find({ group: args.groupId });
-      
-      console.log(users)
+
+      console.log(transactions);
 
       let data = {
         nodes: [],
         edges: []
       }
-      // const userIds = group.balancePerUser.map(u => u.user);
-      // const users = await User.find({ _id: { $in: userIds } }).select('name');
+
       const userMap = {};
       users.forEach(user => {
         userMap[user._id] = user.name;
@@ -74,15 +80,15 @@ const resolvers = {
         splitbw.forEach(s => {
           let { user: from, amount } = s;
 
-          if (transactionType === "equally") {
-            amount = transactionAmount / splitbw.length;
-          } else if (transactionType === "percentage") {
-            amount = (transactionAmount * amount) / 100;
-          } else if (transactionType === "shares") {
-            amount = transactionAmount * amount;
-          } else if (transactionType === "custom") {
-            amount = s.amount;
-          }
+          // if (transactionType === "equally") {
+          //   amount = transactionAmount / splitbw.length;
+          // } else if (transactionType === "percentage") {
+          //   amount = (transactionAmount * amount) / 100;
+          // } else if (transactionType === "shares") {
+          //   amount = transactionAmount * amount;
+          // } else if (transactionType === "custom") {
+          //   amount = s.amount;
+          // }
           data.edges.push({ from: from.toString(), to: to.toString(), label: amount }); // Convert ObjectId to string
         });
       });
@@ -133,9 +139,6 @@ const resolvers = {
       }))
       return data;
     },
-    transactions: async (parent,args) => {
-      return await Transaction.find({group:parent._id})
-    }
   },
   Transaction: {
     user: async (parent, args, context, info) => {
@@ -169,15 +172,25 @@ const resolvers = {
         phoneNo: args.phoneNo,
         contact: "",
         total_owed: 0, 
-        isVerified: true,  // change to false
+        isVerified: false, 
       });
-      return  await newUser.save();
+
+      const nonExpenseGroup = new Group({
+        name: "Non-Expense",
+        type: "Other",
+        currencyType: "INR",
+        admin: newUser._id,
+        users: [newUser._id],
+      });
+
+      newUser.groups.push({ group_id: nonExpenseGroup._id, balance: 0 }); // non group expense should be at index 0 always
+      await nonExpenseGroup.save();
+      return await newUser.save();
     },
     createUserWithGoogleSignIn: async (parent,args,context,info)=>{
       const user = await User.find({email : args.email});
       if(user) {
         throw new Error("user already exists with this email");
-        return null;
       };
 
       const newUser = new User({
@@ -208,8 +221,6 @@ const resolvers = {
     createGroup: async (parent, args, context, info) => {
       const group = new Group({
         name: args.name,
-        email: args.email,
-        password: args.password,
         type: args.type,
         imageUrl: args.imageUrl,
         currencyType: args.currencyType,
@@ -262,20 +273,31 @@ const resolvers = {
           }
         }
 
-        newUser.groups.push({ group_id: group._id, balance: 0 });
-       
+        // check if newUser is already in the group
+        if (!group.users.includes(newUser._id)) {
+          group.users.push(newUser._id);
+          newUser.groups.push({ group_id: group._id, balance: 0 })
+        }
+
         // Save the updated newUser
         await newUser.save();
       }
 
-      group.users = [...group.users, ...args.userIds];
-      return await group.save();
-      
+      return await group.save(); 
     },
     addFriend: async (parent, args, context, info) => {
+
+      if(args.id === args.friendId){
+        throw new Error("Cannot add yourself as friend");
+      }
+      
       const user = await User.findById(args.id);
       const friend = await User.findById(args.friendId);
 
+      if(user.friends.some(f => f.friend_id.toString() === args.friendId)){
+        throw new Error("Friend already exists");
+      }
+    
       user.friends.push({
         friend_id: args.friendId,
         balance: 0
@@ -285,69 +307,114 @@ const resolvers = {
         friend_id: args.id,
         balance: 0
       });
+      await user.save();
+      return await friend.save();
     },
     createTransaction: async (parent, args, context, info) => {
-      const transactionType = args.type;
-      let splitbw = [];
-      let creatorId = args.user;
-      let group = await Group.findById(args.group); // list of userIds including Txn creator
-      let txUsers = group.users.map((id)=>{
-        return id.toString();
-      });
 
-      if( transactionType === "equally"){ 
-        let amount = args.amount;
-        let n = txUsers.length;
-        
-        txUsers.forEach(async(userId)=>{
-          splitbw.push({"user":userId, "amount":amount/n});
+      try {
+        const creator = await User.findById(args.creator);
+        const txUsers = args.splitbw.filter(s => s.user != creator._id.toString()).map(s => s.user);
+        const splits = {};
+
+        args.splitbw.forEach((s) => {
+          splits[s.user] = s.amount;
+        })
+
+        let t;
+        if(args.group == "") {
+            t = new Transaction({
+              description: args.description,
+              amount: args.amount,
+              user: args.creator,
+              type: args.type,
+              currencyType: args.currencyType,
+              splitbw: args.splitbw,
+            })
+        }
+        else {
+          t = new Transaction({
+            description: args.description,
+            amount: args.amount,
+            user: args.creator,
+            group: args.group,
+            type: args.type,
+            currencyType: args.currencyType,
+            splitbw: args.splitbw,
+          })
+        }
+
+        txUsers.forEach(async (userId) => {
           const user = await User.findById(userId);
-          for(let i=0;i<user.groups.length;i++){
-            if(user.groups[i].group_id.toString() == args.group){
-              if(userId == creatorId){
-                user.groups[i].balance += (amount - amount/n);
-                user.total_owed += (amount - amount/n);
 
+          //update group balance
+          if(args.group == ""){
+            const nonExpenseGroup = user.groups[0];
+            nonExpenseGroup.balance -= splits[userId];
+          }
+          else {
+            for (let i = 0; i < user.groups.length; i++) {
+              const group = user.groups[i];
+              if (group.group_id.toString() == args.group ) {
+                group.balance -= splits[userId];
+                break;
               }
-              else {
-                user.groups[i].balance -= amount/n;   
-                user.total_owed -= amount/n;       
-              }
+            }
+          }
+        
+          //update creator friend balance
+          for (let i = 0; i < user.friends.length; i++) {
+            const friend = user.friends[i];
+            if (friend.friend_id.toString() === creator._id.toString()) {
+              friend.balance -= splits[userId];
               break;
             }
           }
 
-          for(let i=0;i<user.friends.length;i++){
-            const friend = user.friends[i];
-            if(userId == creatorId){
-              if (txUsers.includes(friend.friend_id.toString())){
-                friend.balance -= amount/n;
-              }
-            }
-            else if(friend.friend_id == creatorId) {
-                friend.balance += amount/n;
-                break;
+          user.total_owed -= splits[userId];
+          user.transactions.push(t._id);  // user who is involved in transaction
+          await user.save();
+          // console.log("Txuser",user);
+        })
+
+        //update creator group balance
+        if(args.group == ""){
+          const nonExpenseGroup = creator.groups[0];
+          nonExpenseGroup.balance += splits[args.creator];
+        }
+        else {
+          for (let i = 0; i < creator.groups.length; i++) {
+            const group = creator.groups[i];
+            if (group.group_id.toString() == args.group) {
+              group.balance += splits[args.creator];
+              break;
             }
           }
-          await user.save();
-        })
-      }    
-      const t = await Transaction.create({
-        description: args.description,
-        amount: args.amount,
-        user: args.user,
-        group: args.group,
-        type: args.type,
-        currencyType: args.currencyType,
-        splitbw: splitbw
-      })
+        }
 
-      group.transactions.push(t._id);
-      await group.save();
-      return t;
+        //update creator friends balance involved in transaction
+        for (let i = 0; i < creator.friends.length; i++) {
+          const friend = creator.friends[i];
+          const fid = friend.friend_id.toString();
+          if (txUsers.includes(fid)) {
+            friend.balance += splits[fid];
+          }
+        }
+
+        creator.total_owed += splits[args.creator];
+        creator.transactions.push(t._id);  //  creator who is involved in transaction
+        await t.save();
+        await creator.save();
+        // console.log("creator",creator);
+        // console.log("Transaction",t);
+        return t;
+      } 
+      catch (error) {
+        console.log(error);
+      }
     }
   }
-};
+}
 
 const server = new ApolloServer({
   typeDefs,

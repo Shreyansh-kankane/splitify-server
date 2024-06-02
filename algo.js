@@ -10,8 +10,9 @@ function solveData(data) {
     // Calculating net balance of each person
     for (let i = 0; i < data['edges'].length; i++) {
         const edge = data['edges'][i];
-        vals[edge['to'] - 1] += parseFloat(edge['label']);
-        vals[edge['from'] - 1] -= parseFloat(edge['label']);
+        let amount = +parseFloat(edge['label']);
+        vals[edge['to'] - 1] += amount;
+        vals[edge['from'] - 1] -= amount;
     }
 
     const new_vals = {}
@@ -87,10 +88,10 @@ function converData(data){
 // let d = {
 //     nodes: [12, 212, 322, 421],
 //     edges: [
-//         { from: 12, to: 212, label: '10' },
-//         { from: 212, to: 322, label: '20' },
-//         { from: 322, to: 421, label: '30' },
-//         { from: 421, to: 12, label: '40' },
+//         { from: 12, to: 212, label: '10.1213123' },
+//         { from: 212, to: 322, label: '20.23123' },
+//         { from: 322, to: 421, label: '30.223' },
+//         { from: 421, to: 12, label: '40.2123' },
 //     ]
 // };
 
@@ -103,5 +104,9 @@ function converData(data){
 
 //     console.log( labelMap[from] + ' owes ' + labelMap[to] + ' ' + edge['label'])
 // }
+
+// const c = solveData(d);
+
+// console.log(c);
 
 export {solveData};

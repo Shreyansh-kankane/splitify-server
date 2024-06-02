@@ -18,6 +18,7 @@ const userFriendSchema = new Schema({
 }, {_id: false})
 
 
+
 const UserSchema = new Schema({
     name: String,
     email: String,
@@ -31,6 +32,12 @@ const UserSchema = new Schema({
     },
     friends: [ userFriendSchema ],
     groups: [ userGroupSchema ],
+    transactions: [ 
+        {
+            type: Schema.Types.ObjectId,
+            ref: "Transaction"
+        }
+     ],
     isVerified: Boolean,
     resetPasswordToken: String,
     resetPasswordTokenExpires: Date,

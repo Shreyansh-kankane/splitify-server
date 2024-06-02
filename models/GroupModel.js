@@ -10,10 +10,6 @@ const GroupSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User"
     }],
-    transactions: [{
-        type: Schema.Types.ObjectId,
-        ref: "Transaction",
-    }],
     admin: {
         type: Schema.Types.ObjectId,
         ref: "User"

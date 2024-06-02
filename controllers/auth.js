@@ -5,6 +5,7 @@ import UserOTPVerification from '../models/UserOTPVerification.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import Group from '../models/GroupModel.js';
 
 dotenv.config();
 
@@ -136,6 +137,20 @@ const verifyOTP = async (req, res) => {
         else {
             await User.updateOne({ _id: userId }, { isVerified: true });
             await UserOTPVerificationRecord.deleteOne({ _id: userId });
+
+            // create non-expense group for user
+            const newGroup = new Group({
+                name: 'Non-Expense Group',
+                total_owed: 0,
+                admin: userId,
+                users: [userId],
+                currencyType: 'INR',
+                type: 'Other'
+            })
+
+            await newGroup.save();
+            await User.updateOne({ _id: userId }, { $push: { groups: { group_id: newGroup._id, balance: 0 } } });
+
             return res.json({ status: 'SUCCESS', message: 'OTP verified successfully' });
         }
 
@@ -174,6 +189,9 @@ const login = async (req, res) => {
         const user = await User.findOne({ email: email });
         if (!user) return res.status(400).json({ msg: "User does not exist. " });
 
+        const isVerified = user.isVerified;
+        if (!isVerified) return res.status(400).json({ msg: "User is not verified. " });
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ msg: "Invalid credentials. " });
 
@@ -190,16 +208,23 @@ const login = async (req, res) => {
 };
 
 const createUserWithGoogleSignIn = async (req, res) => {
-    try {
+    try {   
         const { name, email, imageUrl } = req.body;
-        const user = new User({
+
+        const user = await User.findOne({email});
+        if(user){
+            return res.status(201).json(user);
+        }
+        const newUser = new User({
             name,
             email,
             imageUrl,
+            contact: "",
             total_owed: 0,
         });
         await user.save();
-        res.json(user);
+        return res.status(200).json(newUser);
+        
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -215,7 +240,7 @@ const changePasswordReq = async (req,res) => {
             subject: 'Reset Password Request',
             html: `
                 <h2>Please click on the link to reset your password</h2>
-                <p>${process.env.URL}/resetPassword/?token=${token}</p>
+                <p>http://localhost:4000/user/resetPassword/${token}</p>
                 <p>Do not share with anyone.</p>
             `
         }
@@ -229,10 +254,24 @@ const changePasswordReq = async (req,res) => {
 
 const resetPassword = async (req,res) => {
     const token = req.params.token;
+    console.log(token)
     if(!token){
         return res.status(400).json({ error: 'Invalid token' });
     }
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decodedToken) => {
+        if(err){
+            return res.status(400).json({ error: 'Incorrect or expired link' });
+        }
+        const { email } = decodedToken;
+        const { password } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(400).json({ error: 'User does not exist' });
 
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        await User.updateOne({ email }, { password: hashedPassword });
+        res.json({ message: 'Password updated successfully' });
+    })
 }
 
 

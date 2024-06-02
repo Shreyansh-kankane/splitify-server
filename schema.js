@@ -36,7 +36,7 @@ export const typeDefs =`#graphql
         users: [User!],
         type: GroupType!
         currencyType: CurrencyType!
-        transactions: [Transaction!]
+        # transactions: [Transaction!]
     }
 
     enum GroupType {
@@ -58,7 +58,7 @@ export const typeDefs =`#graphql
         amount: Float!,
         description: String!,
         user: User!,
-        group: Group!
+        group: Group
         type: TransactionType!
         currencyType: CurrencyType!
         splitbw: [splitbw]
@@ -80,7 +80,7 @@ export const typeDefs =`#graphql
         user(id: ID!): User,
         group(id: ID!): Group,
         transaction(id: ID!): Transaction
-        getExpenseFeed(groupId: ID!,userId: ID!): ExpenseFeed
+        getExpenseFeed(groupId: ID!): ExpenseFeed,
     }
     type Mutation {
         createUser(name: String!, email: String!, password: String!, phoneNo: String, imageUrl: String): User,
@@ -90,7 +90,8 @@ export const typeDefs =`#graphql
         addFriend(id: ID!, friendId: ID!): User,
         createGroup(name: String!, type: GroupType!, admin: ID!, currencyType: CurrencyType, imageUrl: String): Group,
         addGroupMember(groupId: ID!, userIds: [ID!]!): Group,
-        createTransaction(amount: Float!, description: String!, user: ID!, group: ID!, type: TransactionType!, currencyType: CurrencyType!, splitbw: [splitbwInput]): Transaction
+        createTransaction(amount: Float!, description: String!, creator: ID!, group: ID, type: TransactionType!, currencyType: CurrencyType!, splitbw: [splitbwInput]): Transaction
+
     }
 
     type ExpenseFeed {
