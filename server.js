@@ -190,7 +190,7 @@ const resolvers = {
     createUserWithGoogleSignIn: async (parent,args,context,info)=>{
       const user = await User.find({email : args.email});
       if(user) {
-        throw new Error("user already exists with this email");
+        return user;
       };
 
       const newUser = new User({
@@ -290,7 +290,7 @@ const resolvers = {
       if(args.id === args.friendId){
         throw new Error("Cannot add yourself as friend");
       }
-      
+
       const user = await User.findById(args.id);
       const friend = await User.findById(args.friendId);
 
